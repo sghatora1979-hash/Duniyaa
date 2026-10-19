@@ -180,7 +180,7 @@ function Feed() {
 
   async function sharePost(p: Post) {
     const pr = profiles[p.user_id];
-    const url = typeof window !== 'undefined' ? `${window.location.origin}/home` : 'https://ek-duniya.vercel.app/home';
+    const url = typeof window !== 'undefined' ? `${window.location.origin}/home` : 'https://duniyaaaa.netlify.app/home';
     const shareText = `${pr?.full_name || 'Duniya'}: ${p.text.slice(0, 120)}`;
     try {
       if (typeof navigator !== 'undefined' && (navigator as Navigator & { share?: (d: object) => Promise<void> }).share) {
