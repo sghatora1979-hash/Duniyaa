@@ -33,7 +33,7 @@ export default function Register() {
       // "Failed to fetch" = the app could not reach Supabase at all.
       // Give the exact fix instead of a cryptic error.
       if (/failed to fetch|networkerror|load failed/i.test(m)) {
-        setErr('Could not reach the database. In Vercel → Settings → Environment Variables, check that NEXT_PUBLIC_SUPABASE_URL is your full project URL (https://xyz.supabase.co) and NEXT_PUBLIC_SUPABASE_ANON_KEY is set, then Redeploy. (Keys must be saved before the build.)');
+        setErr('Could not reach the database. In Netlify → Environment variables, check that NEXT_PUBLIC_SUPABASE_URL is your full project URL (https://xyz.supabase.co) and NEXT_PUBLIC_SUPABASE_ANON_KEY is set, then Redeploy. (Keys must be saved before the build.)');
       } else {
         setErr(m);
       }
@@ -44,7 +44,7 @@ export default function Register() {
   async function testConnection() {
     setErr(''); setMsg(''); setBusy(true);
     try {
-      if (!isSupaConfigured()) throw new Error('Keys missing: set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel → Settings → Environment Variables, then Redeploy.');
+      if (!isSupaConfigured()) throw new Error('Keys missing: set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Netlify → Environment variables, then Redeploy.');
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
       // Lightweight reachability check — no auth needed.
       const r = await fetch(`${url}/auth/v1/health`, { method: 'GET' });
@@ -53,7 +53,7 @@ export default function Register() {
     } catch (e: unknown) {
       const m = e instanceof Error ? e.message : 'Connection test failed.';
       if (/failed to fetch|networkerror|load failed/i.test(m)) {
-        setErr('Cannot reach the database URL at all. Double-check NEXT_PUBLIC_SUPABASE_URL in Vercel (must start with https:// and end with .supabase.co), save, and Redeploy.');
+        setErr('Cannot reach the database URL at all. Double-check NEXT_PUBLIC_SUPABASE_URL in Netlify (must start with https:// and end with .supabase.co), save, and Redeploy.');
       } else setErr(m);
     } finally { setBusy(false); }
   }
