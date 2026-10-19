@@ -647,13 +647,13 @@ export function ShareButtons({ url, text }: { url: string; text: string }) {
 }
 
 export function ReferCard() {
-  const [refUrl, setRefUrl] = useState('https://ek-duniya.vercel.app/welcome');
+  const [refUrl, setRefUrl] = useState('https://duniyaaaa.netlify.app/welcome');
   useEffect(() => {
     (async () => {
       try {
         if (!isSupaConfigured()) return;
         const { data: { user } } = await supa().auth.getUser();
-        const base = typeof window !== 'undefined' ? window.location.origin : 'https://ek-duniya.vercel.app';
+        const base = typeof window !== 'undefined' ? window.location.origin : 'https://duniyaaaa.netlify.app';
         setRefUrl(user ? `${base}/welcome?ref=${user.id.slice(0, 8)}` : `${base}/welcome`);
       } catch { /* keep default */ }
     })();
