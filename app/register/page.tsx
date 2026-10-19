@@ -45,9 +45,11 @@ export default function Register() {
     setErr(''); setMsg(''); setBusy(true);
     try {
       if (!isSupaConfigured()) throw new Error('Keys missing: set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Netlify → Environment variables, then Redeploy.');
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-      // Lightweight reachability check — no auth needed.
-      const r = await fetch(`${url}/auth/v1/health`, { method: 'GET' });
+     const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Lightweight reachability check — needs the anon key as apikey header.
+const r = await fetch(`${url}/auth/v1/health`, { method: 'GET', headers: { 'apikey': key } });
+
       if (!r.ok) throw new Error(`Database answered with status ${r.status} — the URL may be wrong or the project paused/deleted.`);
       setMsg('Database reachable ✓ — the connection is fine. If signup still fails, check that Email auth is enabled in Supabase → Authentication → Providers.');
     } catch (e: unknown) {
