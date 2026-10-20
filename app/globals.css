@@ -16,8 +16,7 @@ a { color: inherit; }
 .wrap { max-width: 920px; margin: 0 auto; padding: 0 16px 70px; position: relative; z-index: 1; }
 .nav { display: flex; align-items: center; gap: 14px; padding: 14px 0; flex-wrap: wrap; position: sticky; top: 0; z-index: 10;
   background: rgba(255,249,236,.88); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,.07); }
-.logo { font-weight: 900; font-size: 1.35rem; text-decoration: none;
-  background: linear-gradient(90deg, var(--saffron), #fff, var(--green)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.logo { font-weight: 900; font-size: 1.35rem; text-decoration: none; color: #7c2d12; letter-spacing: 0.01em; }
 .navlinks { display: flex; gap: 2px; flex-wrap: wrap; align-items: center; }
 .navlinks a { text-decoration: none; padding: 7px 10px; border-radius: 999px; font-size: .88rem; color: var(--mut); }
 .navlinks a:hover { background: var(--card); color: var(--ink); }
@@ -36,6 +35,7 @@ a { color: inherit; }
 .btn.violet { background: linear-gradient(90deg, var(--acc), var(--acc2)); color: white; }
 .btn:disabled { opacity: .5; cursor: default; }
 .btn + .btn { margin-left: 10px; }
+.row .btn + .btn { margin-left: 0; } /* flex rows me gap already hota hai — double space nahi */
 .input { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(0,0,0,.16);
   background: rgba(255,255,255,.9); color: var(--ink); font-size: 1rem; margin: 6px 0; }
 textarea.input { min-height: 90px; resize: vertical; font-family: inherit; }
@@ -355,17 +355,21 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   color: var(--ink); font-size: .88rem; font-weight: 700; }
 .socbtn:hover { border-color: var(--th-acc); }
 
-/* ============ Duniya v4.1 — mirrored social layout (Orkut + VK pattern) ============
-   VK/Orkut put primary nav LEFT and widgets RIGHT — Duniya mirrors both.
-   Same familiar social pattern, visibly different arrangement. */
+/* ============ Duniya v4.2 — social layout (Facebook pattern, Sandeep's order 2026-10-19) ============
+   nav LEFT (profile + links), feed CENTER, widgets RIGHT (Sponsored, events, birthdays). */
 
-/* Slim topbar: language LEFT, logo RIGHT (mirrored) */
+/* Slim topbar: logo LEFT, search CENTER, language RIGHT */
 .topbar.slim .langbtn { margin-left: 0; }
-.topbar.slim .logo { margin-left: auto; font-size: 1.15rem; }
+.topbar.slim .logo { margin-left: 0; font-size: 1.15rem; }
 
-/* 3-column grid: widgets LEFT | feed CENTER | nav RIGHT */
-.d3 { display: grid; grid-template-columns: 280px minmax(0,1fr) 264px; gap: 20px; align-items: start; margin-top: 8px; }
+/* 3-column grid: nav LEFT | feed CENTER | widgets RIGHT */
+.d3 { display: grid; grid-template-columns: 300px minmax(0,1fr) 300px; gap: 20px; align-items: start; margin-top: 8px; }
 .d3 .feed-col { min-width: 0; max-width: 660px; }
+/* Rail section headings (Sponsored, etc.) — Facebook-style plain headings */
+.railh { margin: 4px 2px 10px; font-size: .95rem; color: var(--mut); font-weight: 700; }
+/* Nav card: profile block on top of the nav links */
+.navrail .profile-mini { margin-bottom: 8px; }
+.navrail .profile-mini .sidecard { margin: 0; }
 .rail-left, .rail-right { position: sticky; top: 78px; display: flex; flex-direction: column; min-width: 0; }
 .rail-left .sidecard, .rail-right .sidecard { margin: 0 0 14px; }
 
@@ -461,3 +465,22 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   flex-shrink: 0; font-size: .85rem; font-weight: 700; border-radius: 999px;
   padding: 8px 14px; cursor: pointer; font-family: inherit;
 }
+
+/* Topbar icons + Duniya Menu panel */
+.topicons { display: inline-flex; gap: 6px; align-items: center; margin-left: 8px; }
+.iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; background: var(--card, #f3e9e2); border: 1px solid rgba(0,0,0,.08); font-size: 18px; line-height: 1; cursor: pointer; text-decoration: none; color: inherit; }
+.iconbtn:hover { background: #ead9c8; }
+.menubackdrop { position: fixed; inset: 0; background: rgba(20,8,4,.45); z-index: 90; }
+.menupanel { position: fixed; top: 0; right: 0; height: 100dvh; width: 380px; max-width: 94vw; background: var(--bg, #fff8f2); z-index: 91; box-shadow: -8px 0 30px rgba(0,0,0,.25); display: flex; flex-direction: column; animation: menuslide .18s ease-out; }
+@keyframes menuslide { from { transform: translateX(40px); opacity: .4; } to { transform: none; opacity: 1; } }
+.menuhead { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 8px; }
+.menuhead h2 { margin: 0; font-size: 1.25rem; color: #7c2d12; }
+.menuscroll { overflow-y: auto; padding-bottom: 24px; }
+.menusection { margin: 10px 16px 4px; font-size: .95rem; color: #7c2d12; }
+.menulink { display: flex; gap: 12px; align-items: center; padding: 9px 16px; text-decoration: none; color: inherit; border-radius: 12px; margin: 2px 8px; }
+.menulink:hover { background: rgba(124,45,18,.08); }
+.menulink small { display: block; color: var(--mut, #8a6d5c); font-size: .78rem; }
+.menuicon { font-size: 22px; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; background: #f3e9e2; border-radius: 50%; flex: none; }
+.statbox { flex: 1 1 110px; background: #f3e9e2; border-radius: 12px; padding: 12px; text-align: center; }
+.statbox b { display: block; font-size: 1.4rem; color: #7c2d12; }
+.statbox small { color: var(--mut, #8a6d5c); }

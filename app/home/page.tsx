@@ -1,9 +1,10 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { supa, isSupaConfigured } from '../../lib/supabase';
 import { RequireAuth } from '../../lib/auth';
 import { useLang, Shell } from '../../components/ui';
-import { StoriesBar, StoryViewer, SponsoredCard, type Story } from '../../components/hybrid';
+import { StoriesBar, StoryViewer, SponsoredCard, PeopleYouMayKnow, type Story } from '../../components/hybrid';
 
 type Post = { id: string; user_id: string; text: string; image_url: string | null; likes_count: number; created_at: string };
 type Profile = { id: string; full_name: string; avatar_emoji: string };
@@ -199,7 +200,36 @@ function Feed() {
 
   return (
     <Shell title={t('home')} sub="India's public digital square." wide>
-      <StoriesBar onSelect={(stories, idx) => setViewer({ stories, idx })} />
+      <div className="card" id="composer">
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+          <div className="avatar" style={{ flexShrink: 0 }}>🙂</div>
+          <textarea
+            className="input" style={{ flex: 1, margin: 0 }} placeholder={t('whatsNew')} value={text}
+            onChange={(e) => setText(e.target.value)} aria-label={t('whatsNew')}
+          />
+        </div>
+        <div className="row" style={{ justifyContent: 'space-between', marginTop: 10 }}>
+          <div className="row" style={{ gap: 6 }}>
+            <Link href="/live" className="btn ghost" style={{ padding: '8px 14px', fontSize: '.85rem' }}>📹 Live</Link>
+            <Link href="/albums" className="btn ghost" style={{ padding: '8px 14px', fontSize: '.85rem', margin: 0 }}>📷 Photo</Link>
+            <Link href="/reels" className="btn ghost" style={{ padding: '8px 14px', fontSize: '.85rem', margin: 0 }}>🎬 Clip</Link>
+          </div>
+          <div className="row" style={{ gap: 8 }}>
+            <small style={{ color: 'var(--mut)' }}>+10 🏆 per post</small>
+            <button className="btn violet" disabled={busy || !text.trim()} onClick={publish}>
+              {busy ? <span className="spinner" /> : t('post')}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="row" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
+          <b style={{ fontSize: '1rem' }}>📖 Stories</b>
+          <small style={{ color: 'var(--mut)' }}>Doston ki taaza stories</small>
+        </div>
+        <StoriesBar onSelect={(stories, idx) => setViewer({ stories, idx })} />
+      </div>
       {viewer && (
         <StoryViewer
           stories={viewer.stories} idx={viewer.idx}
@@ -208,18 +238,7 @@ function Feed() {
         />
       )}
 
-      <div className="card" id="composer">
-        <textarea
-          className="input" placeholder={t('whatsNew')} value={text}
-          onChange={(e) => setText(e.target.value)} aria-label={t('whatsNew')}
-        />
-        <div className="row">
-          <button className="btn violet" disabled={busy || !text.trim()} onClick={publish}>
-            {busy ? <span className="spinner" /> : t('post')}
-          </button>
-          <small style={{ color: 'var(--mut)' }}>+10 🏆 per post</small>
-        </div>
-      </div>
+      <PeopleYouMayKnow />
 
       {!isSupaConfigured() && <div className="note">Connect Supabase keys to load the live feed.</div>}
 

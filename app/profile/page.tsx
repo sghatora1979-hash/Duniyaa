@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supa, isSupaConfigured } from '../../lib/supabase';
 import { RequireAuth, signOut } from '../../lib/auth';
@@ -31,6 +32,10 @@ function Editor() {
   const [ethnicity, setEthnicity] = useState('');
   const [marriageStatus, setMarriageStatus] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [coverUrl, setCoverUrl] = useState('');
+  const [friendCount, setFriendCount] = useState(0);
+  const [friends, setFriends] = useState<Array<{ id: string; full_name: string; avatar_emoji: string; avatar_url: string | null }>>([]);
+  const [myPosts, setMyPosts] = useState<Array<{ id: string; text: string; likes_count: number; created_at: string }>>([]);
   const [edu10, setEdu10] = useState(''); const [edu10s, setEdu10s] = useState('');
   const [edu12, setEdu12] = useState(''); const [edu12s, setEdu12s] = useState('');
   const [eduGrad, setEduGrad] = useState(''); const [eduGradC, setEduGradC] = useState('');
@@ -70,6 +75,25 @@ function Editor() {
         setReligion(data.religion || ''); setEthnicity(data.ethnicity || '');
         setMarriageStatus(data.marriage_status || '');
         setAvatarUrl(data.avatar_url || '');
+        setCoverUrl(data.cover_url || '');
+        // Friends (accepted, dono taraf) + meri posts — profile header ke liye
+        try {
+          const { data: ships } = await supa().from('av_friendships')
+            .select('requester_id,addressee_id').eq('status', 'accepted')
+            .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
+          const ids = Array.from(new Set(((ships as Array<{ requester_id: string; addressee_id: string }>) || [])
+            .flatMap((s) => [s.requester_id, s.addressee_id]).filter((id) => id !== user.id)));
+          setFriendCount(ids.length);
+          if (ids.length) {
+            const { data: profs } = await supa().from('av_profiles')
+              .select('id,full_name,avatar_emoji,avatar_url').in('id', ids);
+            setFriends(((profs as Array<{ id: string; full_name: string; avatar_emoji: string; avatar_url: string | null }>) || []));
+          }
+          const { data: posts } = await supa().from('av_posts')
+            .select('id,text,likes_count,created_at').eq('user_id', user.id)
+            .order('created_at', { ascending: false }).limit(5);
+          setMyPosts(((posts as Array<{ id: string; text: string; likes_count: number; created_at: string }>) || []));
+        } catch { /* header extras optional */ }
         setEdu10(data.edu_10th || ''); setEdu10s(data.edu_10th_school || '');
         setEdu12(data.edu_12th || ''); setEdu12s(data.edu_12th_school || '');
         setEduGrad(data.edu_grad || ''); setEduGradC(data.edu_grad_college || '');
@@ -95,6 +119,7 @@ function Editor() {
         religion: religion.trim() || null, ethnicity: ethnicity.trim() || null,
         marriage_status: marriageStatus.trim() || null,
         avatar_url: avatarUrl || null,
+        cover_url: coverUrl || null,
         edu_10th: edu10.trim() || null, edu_10th_school: edu10s.trim() || null,
         edu_12th: edu12.trim() || null, edu_12th_school: edu12s.trim() || null,
         edu_grad: eduGrad.trim() || null, edu_grad_college: eduGradC.trim() || null,
@@ -124,6 +149,23 @@ function Editor() {
     setUploading(false);
   }
 
+  async function uploadCover(file: File | undefined) {
+    if (!file) return;
+    setErr(''); setMsg(''); setUploading(true);
+    try {
+      const { data: { user } } = await supa().auth.getUser();
+      if (!user) throw new Error('Login first');
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().slice(0, 4);
+      const path = `covers/${user.id}.${ext}`;
+      const { error } = await supa().storage.from('av-media').upload(path, file, { upsert: true, contentType: file.type });
+      if (error) throw error;
+      const { data: pub } = supa().storage.from('av-media').getPublicUrl(path);
+      setCoverUrl(pub.publicUrl);
+      setMsg('Cover photo uploaded ✓ — neeche Save dabao');
+    } catch (e: unknown) { setErr(e instanceof Error ? e.message : 'Upload failed.'); }
+    setUploading(false);
+  }
+
   async function changePass() {
     setErr(''); setMsg('');
     if (newPass.trim().length < 6) { setErr('Password: min 6 characters'); return; }
@@ -142,7 +184,43 @@ function Editor() {
 
   return (
     <Shell title={t('profile')} sub="One identity across feed, family, briefcase & business.">
-      <div className="card">
+      {/* ---- FB-style profile header: cover + avatar + name + tabs ---- */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{
+          height: 170, position: 'relative',
+          background: coverUrl ? `center / cover no-repeat url(${coverUrl})` : 'linear-gradient(120deg,#4c1d95,#b45309 55%,#14532d)',
+        }}>
+          <label className="btn ghost" style={{ position: 'absolute', right: 12, bottom: 12, fontSize: '.8rem', padding: '8px 14px', cursor: 'pointer', background: 'rgba(255,255,255,.94)' }}>
+            {uploading ? '…' : '📷 Edit cover photo'}
+            <input type="file" accept="image/*" style={{ display: 'none' }}
+              onChange={(e) => uploadCover(e.target.files?.[0])} disabled={uploading} />
+          </label>
+        </div>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', padding: '0 18px', marginTop: -40 }}>
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={avatarUrl} alt="profile" style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', border: '4px solid #fff', background: '#fff' }} />
+          ) : (
+            <div style={{ width: 96, height: 96, borderRadius: '50%', border: '4px solid #fff', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', flexShrink: 0 }}>{emoji}</div>
+          )}
+          <div style={{ paddingBottom: 6, minWidth: 0 }}>
+            <h2 style={{ margin: 0, fontSize: '1.55rem', lineHeight: 1.15 }}>{name || 'Duniya User'}</h2>
+            <small style={{ color: 'var(--mut)' }}>
+              👥 {friendCount} friends
+              {jobTitle ? ` · 💼 ${jobTitle}` : ''}{company ? ` · ${company}` : ''}
+              {username ? ` · @${username}` : ''}
+            </small>
+          </div>
+        </div>
+        <div className="row" style={{ gap: 4, flexWrap: 'nowrap', overflowX: 'auto', padding: '12px 14px 14px', borderTop: '1px solid rgba(0,0,0,.06)', marginTop: 12 }}>
+          <span className="btn violet" style={{ padding: '8px 16px', fontSize: '.85rem' }}>All</span>
+          <a href="#details" className="btn ghost" style={{ padding: '8px 16px', fontSize: '.85rem', margin: 0 }}>About</a>
+          <Link href="/reels" className="btn ghost" style={{ padding: '8px 16px', fontSize: '.85rem', margin: 0 }}>Reels</Link>
+          <Link href="/albums" className="btn ghost" style={{ padding: '8px 16px', fontSize: '.85rem', margin: 0 }}>Photos</Link>
+          <Link href="/friends" className="btn ghost" style={{ padding: '8px 16px', fontSize: '.85rem', margin: 0 }}>Friends</Link>
+        </div>
+      </div>
+      <div className="card" id="details">
         <div className="genlabel">📷 {t('profilePhoto')}</div>
         <div className="row" style={{ alignItems: 'center' }}>
           {avatarUrl ? (
@@ -234,6 +312,42 @@ function Editor() {
         {msg && <p className="ok">{msg}</p>}
         {err && <p className="err">{err}</p>}
       </div>
+      {(friends.length > 0 || myPosts.length > 0) && (
+        <div className="card">
+          {friends.length > 0 && (
+            <>
+              <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
+                <b style={{ fontSize: '1rem' }}>👥 Friends</b>
+                <Link href="/friends" style={{ fontSize: '.85rem' }}>See all friends →</Link>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(92px, 1fr))', gap: 10 }}>
+                {friends.slice(0, 9).map((f) => (
+                  <div key={f.id} style={{ textAlign: 'center' }}>
+                    {f.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={f.avatar_url} alt={f.full_name} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 12 }} />
+                    ) : (
+                      <div style={{ width: '100%', aspectRatio: '1', borderRadius: 12, background: 'rgba(0,0,0,.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>{f.avatar_emoji || '🙂'}</div>
+                    )}
+                    <small style={{ display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.full_name}</small>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          {myPosts.length > 0 && (
+            <div style={{ marginTop: friends.length ? 18 : 0 }}>
+              <b style={{ fontSize: '1rem' }}>📝 My posts</b>
+              {myPosts.map((p) => (
+                <p key={p.id} style={{ margin: '8px 0 0', borderTop: '1px solid rgba(0,0,0,.05)', paddingTop: 8 }}>
+                  {p.text}<br />
+                  <small style={{ color: 'var(--mut)' }}>{new Date(p.created_at).toLocaleString()} · ❤️ {p.likes_count || 0}</small>
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <div className="card">
         <h3 style={{ margin: '0 0 10px', fontSize: '.95rem' }}>🔒 {t('changePassword')}</h3>
         <div className="row">

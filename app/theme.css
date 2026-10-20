@@ -47,9 +47,7 @@
   filter: drop-shadow(0 0 18px var(--th-glow));
 }
 .logo {
-  background: linear-gradient(90deg, var(--saffron), #fff, var(--green));
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-  filter: drop-shadow(0 0 12px var(--th-glow));
+  color: #7c2d12;
 }
 .hero h1 {
   background: linear-gradient(90deg, var(--th-acc), #fff 50%, var(--th-acc2));

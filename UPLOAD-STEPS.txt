@@ -1,0 +1,37 @@
+DUNIYA FULL UPDATE v2 — 2026-10-19 (Facebook-style + Duniya Menu)
+================================================================
+
+IS UPDATE ME SAB KUCH (pichhla update + ye naye):
+1. Upar LEFT me DUNIYA · The World (dark, saaf). Search beech me, language RIGHT me.
+2. TOPBAR me naye button: 💬 Chats, 🔔 Suchna, ▦ DUNIYA MENU (Facebook ke Menu jaisa panel —
+   Duniya ke apne naam: Post, Clip, Story, Jeevan Update, Dukaan Page, Prachaar, Samuh, Utsav /
+   Mitra, Naukri, Inaam, Parivaar, Albums, Tyohar, Live, Jod / Duniya Studio, Duniya Prachaar, Duniya Vyapaar)
+3. NAYE PAGES:
+   - /studio  — Duniya Studio (Insights live counts, Content, Planned content, Monetization — jald)
+   - /groups  — Samuh (group banao / join karo)
+   - /events  — Utsav (bade events + apna event jodo)
+   - /notifications — Suchna (dost anurodh Confirm/Delete + taaza sandesh)
+4. LEFT rail: profile + poora nav. RIGHT rail: Sponsored, Friend Requests, Events, Birthdays, Festivals.
+5. HOME: composer pehle (Live/Photo/Clip), Stories card, "People you may know" (Add friend).
+6. PROFILE: cover photo upload, bada photo, naam, friends count, tabs, Friends grid, My posts.
+7. REELS: apni photo se clip (3/5/10 sec), neeche doston ki daily posts.
+8. Buttons/cards ki spacing align — extra khaali space fix.
+
+LOGIN KE BAARE ME (tumhare order par):
+- Login wala update ABHI NAHI kiya — wo domain lene ke baad karenge.
+- Is package me DEMO login chalu hai (koi bhi email + koi bhi code) — sab pages test kar sakte ho.
+- Supabase template me {{ .Token }} wali line ABHI mat add karna.
+
+GITHUB UPLOAD (sirf 1 build lagega):
+- Repo: Duniyaa → Add file → Upload files → IS ZIP KI SAARI FILES select karo → Commit.
+- Same naam wali purani files apne aap replace ho jayengi.
+- NOTE: next.config.js is zip me NAHI hai (Gmail block karta hai) — wo repo me pehle se hai.
+
+SUPABASE SQL (naye sirf 4 — SQL Editor me ek-ek Run karo):
+1. supabase/migrations/009_reels_photo.sql      → reels seconds column
+2. supabase/migrations/010_storage_buckets.sql  → photo/file buckets (av-media, av-kyc, av-vault)
+3. supabase/migrations/011_profile_cover.sql    → profile cover column
+4. supabase/migrations/012_groups.sql           → Samuh (groups) ki tables
+(001-008 pehle lage hue hain — dobara mat chalana. "already exists" aaye to ignore.)
+
+BUILD PROOF: TypeScript 0 errors, Next.js build PASS (26/26 pages).

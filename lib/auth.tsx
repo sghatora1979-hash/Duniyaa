@@ -6,13 +6,15 @@ import { supa, isSupaConfigured } from './supabase';
 export type Session = { id: string; email: string } | null;
 
 /**
- * DEMO LOGIN (Duniya v4.7 — Sandeep's order, 2026-10-19):
- * true = koi bhi email + koi bhi code → login, email OTP nahi jayega.
- * Asli 6-digit email OTP wapas lane ke liye ise false kar do —
- * aur Supabase → Authentication → Email Templates → "Magic Link"
- * template me "{{ .Token }}" wali line add karni hogi (tabhi email me code aayega).
+ * DEMO LOGIN switch (Duniya v4.7):
+ * false = ASLI login — email par 6-digit OTP aayega, asli account + asli profile banega.
+ *        (Shart: Supabase → Authentication → Email Templates → "Magic Link"
+ *         template me line honi chahiye: {{ .Token }} — tabhi email me code aayega.)
+ * true  = demo login — koi bhi email + koi bhi code → seedha andar, email nahi jata.
+ *         (2026-10-19 shaam ko demo ON tha jab email template kharab tha;
+ *          raat ko Sandeep ke order par FULLY WORKING ke liye OFF kiya gaya.)
  */
-export const DEMO_LOGIN = true;
+export const DEMO_LOGIN = true;  /* login update domain ke baad — abhi demo hi chalega (uska order 2026-10-19) */
 
 const DEMO_KEY = 'duniya_demo_user';
 

@@ -5,6 +5,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { getLang, setLang, tr, LANGS, type Lang, type StrKey } from '../lib/i18n';
 import { hourTheme, applyTheme, type HourTheme } from '../lib/theme';
 import { MobileNav, LeftRail, RightRail, ChipRow } from './hybrid';
+import { MenuPanel } from './MenuPanel';
 
 export function useLang() {
   const [lang, setL] = useState<Lang>('en');
@@ -30,26 +31,21 @@ export function ThemeBadge() {
   );
 }
 
-/* Slim mirrored topbar: language LEFT, search CENTER, logo RIGHT.
-   (Every other network puts logo left — Duniya mirrors it.) */
+/* Slim topbar: logo LEFT (DUNIYA · The World), search CENTER, language RIGHT.
+   Sandeep's order 2026-10-19: logo left, no flag (Windows par "IN" dikhta tha),
+   naam ke turant baad "The World". */
 export function Navbar() {
   const { lang, switchLang, t } = useLang();
   const router = useRouter();
   const [q, setQ] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
   function go(e: FormEvent) {
     e.preventDefault();
     router.push('/search?q=' + encodeURIComponent(q.trim()));
   }
   return (
     <nav className="topbar slim" aria-label="Primary">
-      <select
-        className="langbtn"
-        value={lang}
-        onChange={(e) => switchLang(e.target.value as Lang)}
-        aria-label="Language"
-      >
-        {LANGS.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
-      </select>
+      <Link href="/" className="logo">DUNIYA <small style={{ fontWeight: 700, fontSize: '0.62em', letterSpacing: '0.04em' }}>· The World</small></Link>
       <form className="topsearch" onSubmit={go} role="search">
         <input
           className="input"
@@ -59,7 +55,20 @@ export function Navbar() {
           aria-label={t('search')}
         />
       </form>
-      <Link href="/" className="logo">\uD83C\uDDEE\uD83C\uDDF3 Duniya <small style={{ fontWeight: 600, opacity: 0.85 }}>· दुनिया</small></Link>
+      <select
+        className="langbtn"
+        value={lang}
+        onChange={(e) => switchLang(e.target.value as Lang)}
+        aria-label="Language"
+      >
+        {LANGS.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
+      </select>
+      <span className="topicons">
+        <Link className="iconbtn" href="/messages" title="Chats" aria-label="Chats">💬</Link>
+        <Link className="iconbtn" href="/notifications" title="Suchna (Notifications)" aria-label="Notifications">🔔</Link>
+        <button className="iconbtn" onClick={() => setMenuOpen(true)} title="Duniya Menu" aria-label="Open menu">▦</button>
+      </span>
+      {menuOpen && <MenuPanel onClose={() => setMenuOpen(false)} />}
     </nav>
   );
 }
@@ -91,7 +100,7 @@ export function Shell({ children, title, sub, wide = false }: {
           </>
         )}
       </main>
-      <footer className="foot">Duniya 🇮🇳 — Made for India · Web3-ready · v1</footer>
+      <footer className="foot">DUNIYA · The World — Made for India · Web3-ready · v1</footer>
       <MobileNav />
     </div>
   );

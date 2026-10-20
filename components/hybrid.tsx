@@ -279,6 +279,47 @@ function EventsCard() {
   );
 }
 
+/* LEFT rail: profile + nav first (Facebook pattern — Sandeep's order, 2026-10-19),
+   then Duniya AI + widgets. */
+export function NavCard() {
+  const { t } = useLang();
+  const path = usePathname();
+  const router = useRouter();
+
+  async function doLogout() {
+    await signOut();
+    router.replace('/login');
+  }
+
+  return (
+    <div className="sidecard navrail" aria-label="Navigation">
+      <ProfileMini />
+      <nav>
+        {MAIN_TABS.map((tb) => (
+          <Link key={tb.href} href={tb.href} className={path === tb.href ? 'active' : ''}>
+            <span className="nic">{tb.icon}</span>
+            <span>{tb.label ?? t(tb.key)}</span>
+          </Link>
+        ))}
+        <div className="navsep" />
+        {MORE_TABS.map((m) =>
+          'href' in m ? (
+            <Link key={m.href} href={m.href} className={path === m.href ? 'active' : ''}>
+              <span className="nic">{m.icon}</span>
+              <span>{m.label ?? t(m.key)}</span>
+            </Link>
+          ) : (
+            <button key="logout" onClick={doLogout}>
+              <span className="nic">{m.icon}</span>
+              <span>{t(m.key)}</span>
+            </button>
+          )
+        )}
+      </nav>
+    </div>
+  );
+}
+
 export function LeftRail() {
   const { t, lang } = useLang();
   const { world } = useWorld();
@@ -300,7 +341,8 @@ export function LeftRail() {
   }
 
   return (
-    <aside className="rail-left" aria-label="Widgets">
+    <aside className="rail-left" aria-label="Navigation and widgets">
+      <NavCard />
       <div className="sidecard aicard">
         <h3>✨ {t('duniyaAI')}</h3>
         <div style={{ maxHeight: 180, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -337,8 +379,6 @@ export function LeftRail() {
         </Link>
       </div>
       <DailyTip />
-      <BirthdayWidget />
-      <FestivalWidget />
       <SportsCard />
     </aside>
   );
@@ -433,42 +473,18 @@ function ProfileMini() {
   );
 }
 
+/* RIGHT rail: Sponsored + events + birthdays + festivals (Facebook pattern) */
 export function RightRail() {
-  const { t } = useLang();
-  const path = usePathname();
-  const router = useRouter();
-
-  async function doLogout() {
-    await signOut();
-    router.replace('/login');
-  }
-
   return (
-    <aside className="rail-right" aria-label="Navigation">
-      <ProfileMini />
+    <aside className="rail-right" aria-label="Events and more">
+      <div>
+        <h3 className="railh">Sponsored</h3>
+        <SponsoredCard seed={1} />
+      </div>
+      <FriendRequestsCard />
       <EventsCard />
-      <nav className="sidecard navrail">
-        {MAIN_TABS.map((tb) => (
-          <Link key={tb.href} href={tb.href} className={path === tb.href ? 'active' : ''}>
-            <span className="nic">{tb.icon}</span>
-            <span>{tb.label ?? t(tb.key)}</span>
-          </Link>
-        ))}
-        <div className="navsep" />
-        {MORE_TABS.map((m) =>
-          'href' in m ? (
-            <Link key={m.href} href={m.href} className={path === m.href ? 'active' : ''}>
-              <span className="nic">{m.icon}</span>
-              <span>{m.label ?? t(m.key)}</span>
-            </Link>
-          ) : (
-            <button key="logout" onClick={doLogout}>
-              <span className="nic">{m.icon}</span>
-              <span>{t(m.key)}</span>
-            </button>
-          )
-        )}
-      </nav>
+      <BirthdayWidget />
+      <FestivalWidget />
     </aside>
   );
 }
@@ -697,6 +713,139 @@ export function SponsoredCard({ seed = 0 }: { seed?: number }) {
         <button className="btn violet" style={{ padding: '8px 20px', fontSize: '.88rem' }} onClick={() => setSoon(true)}>{s.cta} →</button>
       </div>
       {soon && <p className="note" style={{ margin: '10px 0 0' }}>{t('demoAdSoon')}</p>}
+    </div>
+  );
+}
+
+/* -------- Friend requests (RIGHT rail — Facebook pattern) -------- */
+type FriendReq = { id: string; name: string; emoji: string };
+
+export function FriendRequestsCard() {
+  const [reqs, setReqs] = useState<FriendReq[]>([]);
+  useEffect(() => {
+    (async () => {
+      if (!isSupaConfigured()) return;
+      try {
+        const { data: { user } } = await supa().auth.getUser();
+        if (!user) return;
+        const { data: ships } = await supa().from('av_friendships')
+          .select('id,requester_id').eq('status', 'pending').eq('addressee_id', user.id)
+          .order('created_at', { ascending: false }).limit(5);
+        const rows = (ships as Array<{ id: string; requester_id: string }>) || [];
+        if (!rows.length) { setReqs([]); return; }
+        const { data: profs } = await supa().from('av_profiles')
+          .select('id,full_name,avatar_emoji').in('id', rows.map((r) => r.requester_id));
+        const m: Record<string, { full_name: string; avatar_emoji: string }> = {};
+        ((profs as Array<{ id: string; full_name: string; avatar_emoji: string }>) || [])
+          .forEach((p) => { m[p.id] = p; });
+        setReqs(rows.map((r) => ({
+          id: r.id,
+          name: m[r.requester_id]?.full_name || 'Duniya User',
+          emoji: m[r.requester_id]?.avatar_emoji || '🙂',
+        })));
+      } catch { /* ignore */ }
+    })();
+  }, []);
+
+  async function act(id: string, accept: boolean) {
+    try {
+      if (accept) await supa().from('av_friendships').update({ status: 'accepted' }).eq('id', id);
+      else await supa().from('av_friendships').delete().eq('id', id);
+    } catch { /* ignore */ }
+    setReqs((prev) => prev.filter((r) => r.id !== id));
+  }
+
+  if (!reqs.length) return null;
+  return (
+    <div className="sidecard">
+      <h3>👥 Friend requests</h3>
+      {reqs.map((r) => (
+        <div key={r.id} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
+          <div className="avatar">{r.emoji}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <b style={{ fontSize: '.9rem', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name}</b>
+            <div className="row" style={{ marginTop: 4, gap: 6, flexWrap: 'nowrap' }}>
+              <button className="btn violet" style={{ padding: '6px 14px', fontSize: '.8rem' }} onClick={() => act(r.id, true)}>Confirm</button>
+              <button className="btn ghost" style={{ padding: '6px 14px', fontSize: '.8rem', margin: 0 }} onClick={() => act(r.id, false)}>Delete</button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* -------- People you may know (Home center — Facebook pattern) -------- */
+type Suggestion = { id: string; full_name: string; avatar_emoji: string };
+
+export function PeopleYouMayKnow() {
+  const [people, setPeople] = useState<Suggestion[]>([]);
+  const [sent, setSent] = useState<Set<string>>(new Set());
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    (async () => {
+      if (!isSupaConfigured()) return;
+      try {
+        const { data: { user } } = await supa().auth.getUser();
+        if (!user) return;
+        const { data: ships } = await supa().from('av_friendships')
+          .select('requester_id,addressee_id')
+          .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
+        const known = new Set<string>([user.id]);
+        ((ships as Array<{ requester_id: string; addressee_id: string }>) || [])
+          .forEach((s) => { known.add(s.requester_id); known.add(s.addressee_id); });
+        const { data: profs } = await supa().from('av_profiles')
+          .select('id,full_name,avatar_emoji').order('created_at', { ascending: false }).limit(30);
+        const list = ((profs as Suggestion[]) || [])
+          .filter((p) => !known.has(p.id)).slice(0, 8);
+        setPeople(list);
+      } catch { /* ignore */ }
+    })();
+  }, []);
+
+  async function addFriend(pid: string) {
+    try {
+      const { data: { user } } = await supa().auth.getUser();
+      if (!user) return;
+      const { error } = await supa().from('av_friendships')
+        .insert({ requester_id: user.id, addressee_id: pid, status: 'pending' });
+      if (error) throw error;
+      setSent((prev) => new Set(prev).add(pid));
+    } catch { /* ignore */ }
+  }
+
+  const visible = people.filter((p) => !hidden.has(p.id));
+  if (!visible.length) return null;
+  return (
+    <div className="card">
+      <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
+        <b style={{ fontSize: '1rem' }}>👥 People you may know</b>
+        <small style={{ color: 'var(--mut)' }}>Duniya par naye dost banao</small>
+      </div>
+      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 6 }}>
+        {visible.map((p) => (
+          <div key={p.id} style={{
+            minWidth: 148, maxWidth: 148, border: '1px solid rgba(0,0,0,.08)',
+            borderRadius: 14, padding: 12, textAlign: 'center', position: 'relative',
+            background: 'var(--card)',
+          }}>
+            <button
+              aria-label="Dismiss" onClick={() => setHidden((prev) => new Set(prev).add(p.id))}
+              style={{ position: 'absolute', top: 6, right: 8, border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--mut)', fontSize: '.95rem' }}
+            >✕</button>
+            <div style={{ fontSize: '2.2rem', lineHeight: 1.2 }}>{p.avatar_emoji || '🙂'}</div>
+            <b style={{ fontSize: '.88rem', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.full_name || 'Duniya User'}</b>
+            <button
+              className="btn violet" disabled={sent.has(p.id)}
+              style={{ padding: '7px 12px', fontSize: '.8rem', marginTop: 8, width: '100%' }}
+              onClick={() => addFriend(p.id)}
+            >
+              {sent.has(p.id) ? '✓ Sent' : '➕ Add friend'}
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
