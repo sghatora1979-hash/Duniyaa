@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supa, isSupaConfigured } from '../../lib/supabase';
+import { DEMO_LOGIN, demoSignIn } from '../../lib/auth';
 import { useLang, Shell } from '../../components/ui';
 
 export default function Register() {
@@ -19,8 +20,14 @@ export default function Register() {
   async function sendCode() {
     setErr(''); setMsg(''); setBusy(true);
     try {
-      if (!isSupaConfigured()) throw new Error('Database not connected yet — connect Supabase keys first.');
       if (!email.includes('@')) throw new Error('Enter a valid email.');
+      if (DEMO_LOGIN) {
+        // 📝 DEMO: email nahi jayega — seedha OTP step.
+        setStep('otp');
+        setMsg('📝 Demo mode — email nahi jayega. Koi bhi 6-digit number likho, login ho jayega.');
+        return;
+      }
+      if (!isSupaConfigured()) throw new Error('Database not connected yet — connect Supabase keys first.');
       const { error } = await supa().auth.signInWithOtp({
         email: email.trim(),
         options: { data: { full_name: name.trim(), phone: phone.trim() } },
@@ -45,11 +52,10 @@ export default function Register() {
     setErr(''); setMsg(''); setBusy(true);
     try {
       if (!isSupaConfigured()) throw new Error('Keys missing: set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Netlify → Environment variables, then Redeploy.');
-     const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-// Lightweight reachability check — needs the anon key as apikey header.
-const r = await fetch(`${url}/auth/v1/health`, { method: 'GET', headers: { 'apikey': key } });
-
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+      // Lightweight reachability check — needs the anon key as apikey header.
+      const r = await fetch(`${url}/auth/v1/health`, { method: 'GET', headers: { 'apikey': key } });
       if (!r.ok) throw new Error(`Database answered with status ${r.status} — the URL may be wrong or the project paused/deleted.`);
       setMsg('Database reachable ✓ — the connection is fine. If signup still fails, check that Email auth is enabled in Supabase → Authentication → Providers.');
     } catch (e: unknown) {
@@ -63,6 +69,13 @@ const r = await fetch(`${url}/auth/v1/health`, { method: 'GET', headers: { 'apik
   async function verify() {
     setErr(''); setBusy(true);
     try {
+      if (DEMO_LOGIN) {
+        // 📝 DEMO: koi bhi code chalega — seedha /home.
+        if (code.trim().length < 4) throw new Error('Koi bhi 6-digit number likho (demo).');
+        demoSignIn(email, name);
+        router.push('/home');
+        return;
+      }
       const { error } = await supa().auth.verifyOtp({ email: email.trim(), token: code.trim(), type: 'email' });
       if (error) throw error;
       router.push('/home');
@@ -78,14 +91,14 @@ const r = await fetch(`${url}/auth/v1/health`, { method: 'GET', headers: { 'apik
             <input className="input" placeholder={t('fullName')} value={name} onChange={e => setName(e.target.value)} />
             <input className="input" placeholder={t('email')} value={email} onChange={e => setEmail(e.target.value)} />
             <input className="input" placeholder={`${t('phone')} (e.g. +91 98765 43210)`} value={phone} onChange={e => setPhone(e.target.value)} />
-            <div className="note">We send a one-time code to your email. Your phone number is stored with your account — never shown publicly.</div>
+            <div className="note">{DEMO_LOGIN ? '📝 Demo mode: koi bhi email likho — koi email nahi jayega, koi bhi code chalega. Asli OTP baad me aayega.' : 'We send a one-time code to your email. Your phone number is stored with your account — never shown publicly.'}</div>
             <button className="btn violet" disabled={busy} onClick={sendCode}>{busy ? '…' : t('sendCode')}</button>{' '}
             <button className="btn ghost" disabled={busy} onClick={testConnection} title="Check whether the app can reach the database">Test connection</button>
           </>
         ) : (
           <>
-            <p>Enter the 6-digit code sent to <b>{email}</b>:</p>
-            <input className="input" placeholder="123456" value={code} onChange={e => setCode(e.target.value)} maxLength={6} />
+            <p>{DEMO_LOGIN ? <>📝 Demo code likho (koi bhi 6-digit number) — email <b>{email}</b> par kuch nahi jayega:</> : <>Enter the 6-digit code sent to <b>{email}</b>:</>}</p>
+            <input className="input" placeholder="6-digit code" value={code} onChange={e => setCode(e.target.value)} maxLength={6} inputMode="numeric" />
             <button className="btn violet" disabled={busy} onClick={verify}>{busy ? '…' : t('verify')}</button>{' '}
             <button className="btn ghost" onClick={() => setStep('form')}>Back</button>
           </>
