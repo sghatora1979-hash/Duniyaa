@@ -5,10 +5,42 @@ import { supa, isSupaConfigured } from './supabase';
 
 export type Session = { id: string; email: string } | null;
 
+/**
+ * DEMO LOGIN (Duniya v4.7 — Sandeep's order, 2026-10-19):
+ * true = koi bhi email + koi bhi code → login, email OTP nahi jayega.
+ * Asli 6-digit email OTP wapas lane ke liye ise false kar do —
+ * aur Supabase → Authentication → Email Templates → "Magic Link"
+ * template me "{{ .Token }}" wali line add karni hogi (tabhi email me code aayega).
+ */
+export const DEMO_LOGIN = true;
+
+const DEMO_KEY = 'duniya_demo_user';
+
+/** Demo login: koi bhi email + koi bhi code → local session, /home khul jayega. */
+export function demoSignIn(email: string, name?: string) {
+  const u = { id: 'demo-' + email.trim().toLowerCase(), email: email.trim(), name: (name || '').trim() };
+  try { localStorage.setItem(DEMO_KEY, JSON.stringify(u)); } catch { /* ignore */ }
+  return u;
+}
+
+export function demoSignOut() {
+  try { localStorage.removeItem(DEMO_KEY); } catch { /* ignore */ }
+}
+
+function getDemoSession(): Session {
+  try {
+    const raw = localStorage.getItem(DEMO_KEY);
+    if (raw) { const u = JSON.parse(raw); if (u && u.id && u.email) return { id: u.id, email: u.email }; }
+  } catch { /* ignore */ }
+  return null;
+}
+
 export function useSession() {
   const router = useRouter();
   const [session, setSession] = useState<Session>(undefined as unknown as Session);
   useEffect(() => {
+    // Demo login ON hai to local demo session hi kaafi hai — Supabase ki zaroorat nahi.
+    if (DEMO_LOGIN) { const d = getDemoSession(); setSession(d); return; }
     if (!isSupaConfigured()) { setSession(null); return; }
     supa().auth.getSession().then(({ data }) => {
       const u = data.session?.user;
@@ -37,6 +69,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
 }
 
 export async function signOut() {
+  demoSignOut();
   if (isSupaConfigured()) await supa().auth.signOut();
 }
 
